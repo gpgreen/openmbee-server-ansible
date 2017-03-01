@@ -1,0 +1,20 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+
+- name: update tomcat iptables
+  lineinfile:
+    dest=/etc/sysconfig/iptables
+    state=present
+    regexp="^.*INPUT.*tcp.*{{ item }}.*ACCEPT"
+    insertafter="^.*INPUT.*RELATED,ESTABLISHED.*ACCEPT"
+    line="-A INPUT -m state --state NEW -m tcp -p tcp --dport {{ item }} -j ACCEPT"
+    backup=yes
+  with_items: "{{ tomcat_ports }}"
+  become: yes
+  
+- name: restart tomcat iptables
+  service: name=iptables state=restarted
+  become: yes
+  

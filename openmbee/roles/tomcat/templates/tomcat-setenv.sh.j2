@@ -1,0 +1,34 @@
+# setenv.sh
+#
+# {{ ansible_managed }}
+# 
+# this file can be used for changing the environment for the following variables:
+#  CATALINA_HOME
+#  CATALINA_BASE
+#  CATALINA_OUT
+#  CATALINA_OPTS
+#  CATALINA_TMPDIR
+#  JAVA_HOME
+#  JRE_HOME
+#  JAVA_OPTS
+#  JAVA_ENDORSED_DIRS
+#  JPDA_TRANSPORT
+#  JPDA_ADDRESS
+#  JPDA_SUSPEND
+#  JPDA_OPTS
+#  CATALINA_PID
+#  LOGGING_CONFIG
+#  LOGGING_MANAGER
+
+# set server memory limits and specify server mode
+JAVA_OPTS="$JAVA_OPTS -Xms{{ tomcat_min_heap_size }} -Xmx{{ tomcat_max_heap_size }} -XX:MaxPermSize={{ tomcat_perm_mem_size }} -server"
+
+# Setup for JMX monitoring
+CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.authenticate=true"
+CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.password.file={{ tomcat_dir }}/conf/jmx.password"
+CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.access.file={{ tomcat_dir }}/conf/jmx.access"
+CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote.ssl=false"
+CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote"
+
+# uncomment the following to debug remote connections
+#CATALINA_OPTS="$CATALINA_OPTS -Djava.rmi.server.logCalls=true"

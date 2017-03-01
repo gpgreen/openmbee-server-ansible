@@ -1,0 +1,92 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# variables for the Tomcat installation
+
+http_port: 8080
+https_port: 8443
+tomcat_jmx_port: 50510
+tomcat_jmx_svr_port: 50511
+
+# This will configure a default manager-gui user:
+
+tomcat_admin_username: admin
+tomcat_admin_password: "{{ vault_tomcat_admin_password }}"
+
+# absolute path of alfresco base
+tomcat_base_dir: /home/openmbee
+
+# name of tomcat directory
+tomcat_name: apache-tomcat-7.0.69
+
+# absolute path of alfresco installation
+tomcat_dir: "{{ tomcat_base_dir }}/{{ tomcat_name }}"
+
+# absolute path of alfresco data store
+alfresco_data_dir: "{{ top_data_dir }}/alfresco"
+
+# absolute path of alfresco backups
+alfresco_backup_dir: "{{ backup_dir }}/alfresco"
+
+# alfresco admin password
+alfresco_user_store_pwd: "{{ vault_alfresco_user_store_pwd }}"
+
+# alfresco admin password (encoded)
+alfresco_user_store_pwd_encoded: "{{ vault_alfresco_user_store_pwd_encoded }}"
+
+#############################################################################
+# Artifacts variables
+#############################################################################
+
+# what version of tomcat to use
+tomcat_tar_name: "{{ tomcat_name }}.tar.gz"
+
+# tomcat download link
+tomcat_download: http://java.domain.com/path/{{ tomcat_tar_name }}
+
+# jmx jar download link
+tomcat_jmx_url: http://java.domain.com/path/catalina-jmx-remote.jar
+
+# type of alfresco to use
+#alfresco_class: enterprise
+alfresco_class: community
+
+# version of alfresco
+#alfresco_version: 4.2.5.1
+alfresco_version: 4.2.e
+
+# sdk name
+alfresco_zip_root: alfresco-{{ alfresco_class }}-{{ alfresco_version }}
+
+# sdk artifact name
+alfresco_zip: alfresco-{{ alfresco_class }}-sdk-{{ alfresco_version }}.zip
+
+# alfresco artifactory urls
+alfresco_sdk_url: "{{ artifactory }}/ext-release-local/com/alfresco/alfresco-community-sdk/{{ alfresco_version }}/{{ alfresco_zip }}"
+
+# mms-repo.amp
+mms_repo_amp_file: mms-repo-2.3.3.amp
+mms_repo_url: "{{ artifactory }}/libs-release-local/gov/nasa/jpl/mms-repo/2.3.3/{{ mms_repo_amp_file }}"
+
+# mms-share.amp
+mms_share_amp_file: mms-share-{{ alfresco_class }}-2.3.1.amp
+mms_share_url: "{{ artifactory }}/libs-release-local/gov/nasa/jpl/mms-share-{{ alfresco_class }}/2.3.1/{{ mms_share_amp_file }}"
+
+# evm zip
+evm_file: evm-2.3.7.2.zip
+
+# path to evm zip file
+evm_url: "{{ artifactory }}/libs-release-local/gov/nasa/jpl/evm/2.3.7.2/{{ evm_file }}"
+
+# docbookgen
+docbookgen_file: docbookgen-2.1.zip
+
+# path to docbookgen file
+docbookgen_url: "{{ artifactory }}/libs-release-local/gov/nasa/jpl/docbookgen/2.1/{{ docbookgen_file }}"
+
+# alfresco community spp amp
+alf_community_amp_file: alfresco-community-spp-4.2.e.amp
+
+# path to alfresco community amp
+alf_community_amp_url: "{{ artifactory }}/ext-release-local/com/alfresco/alfresco-community-spp/4.2.e/{{ alf_community_amp_file }}"

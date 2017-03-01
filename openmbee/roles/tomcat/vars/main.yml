@@ -1,0 +1,18 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+#
+# Altered from original work on standalone tomcat installation:
+# Copyright (C) 2013 AnsibleWorks, Inc.
+################################################################################
+# variables for use in tomcat installation
+---
+# memory sizes
+tomcat_min_heap_size: 512m
+tomcat_max_heap_size: 3G
+tomcat_perm_mem_size: 256m
+
+tomcat_ports:
+  - "{{ http_port }}"
+  - "{{ tomcat_jmx_port }}"
+  - "{{ tomcat_jmx_svr_port }}"
+

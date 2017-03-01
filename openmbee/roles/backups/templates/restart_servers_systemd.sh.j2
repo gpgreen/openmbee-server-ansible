@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# {{ ansible_managed }}
+#
+# restart_servers.sh
+#
+# by Greg Green for use in Open-MBEE project
+# restart all servers in order
+
+systemctl stop tomcat-openmbee
+systemctl restart activemq-openmbee
+systemctl restart postgresql-openmbee
+systemctl start tomcat-openmbee

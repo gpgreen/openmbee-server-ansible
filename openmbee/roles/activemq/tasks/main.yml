@@ -1,0 +1,83 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: add group "activemq"
+  group: name=activemq
+  become: yes
+
+- name: add user "activemq"
+  user: name=activemq group=activemq home={{ activemq_folder }}/{{ activemq_alias }} createhome=no
+  become: yes
+
+- name: download activemq
+  get_url: url={{ activemq_download }} dest={{ activemq_download_folder }}
+  become: yes
+
+# for some reason, unarchive module won't untar this file so do it using tar
+- name: extract archive
+#  unarchive: src={{ activemq_archive }} dest={{ activemq_folder }} creates={{ activemq_dir }} copy=no
+  command: "tar -xzf {{ activemq_archive }} -C {{ activemq_folder }} creates={{ activemq_dir }}"
+  become: yes
+
+- name: Symlink install directory
+  file: src={{ activemq_dir }} path={{ activemq_folder }}/{{ activemq_alias }} state=link
+  become: yes
+
+- name: Change ownership of Activemq installation
+  file: path={{ activemq_dir }} owner=activemq group=activemq state=directory recurse=yes
+  become: yes
+
+- name: Install activemq configuration
+  template: src=open-mbee.xml.j2 dest={{ activemq_dir }}/conf/activemq.xml backup=yes
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq jetty file
+  template: src=jetty.xml.j2 dest={{ activemq_dir }}/conf/jetty.xml mode=0644 owner=activemq group=activemq backup=yes
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq jetty realm file
+  template: src=jetty-realm.properties.j2 dest={{ activemq_dir }}/conf/jetty-realm.properties mode=0400 owner=activemq group=activemq
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq log4j properties
+  template: src=log4j.properties.j2 dest={{ activemq_dir }}/conf/log4j.properties mode=0640 owner=activemq group=activemq backup=yes
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq jmx access configuration
+  template: src=jmx.access.j2 dest={{ activemq_dir }}/conf/jmx.access mode=0400 owner=activemq group=activemq
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq jmx password configuration
+  template: src=jmx.password.j2 dest={{ activemq_dir }}/conf/jmx.password mode=0400 owner=activemq group=activemq
+  become: yes
+  notify: restart activemq
+
+- name: Install activemq environment script
+  template: src=activemq.sh.j2 dest=/etc/default/activemq mode=0644 owner=root group=root
+  become: yes
+  notify: restart activemq
+
+- name: Install Activemq systemd unit file
+  template: src=activemq.service.j2 dest=/etc/systemd/system/activemq-openmbee.service mode=0644
+  become: yes
+  notify: restart activemq
+
+- name: reload systemd unit files
+  command: systemctl daemon-reload
+  become: yes
+
+- name: enable activemq unit
+  command: systemctl enable activemq-openmbee
+  become: yes
+
+- include: activemq_fw_firewalld.yml
+  when: firewall == "firewalld"
+
+- include: activemq_fw_iptables.yml
+  when: firewall == "iptables"

@@ -1,0 +1,21 @@
+# List servers
+# each server specifies interface to listen on
+# and which type of firewall software it is running
+# iface=<ipv4 address>
+# firewall=firewalld||iptables
+
+# a server
+server.domain iface=192.168.1.1 firewall=firewalld
+
+[db-servers]
+server.domain
+
+[tomcat-servers]
+server.domain
+
+[msg-servers]
+server.domain
+
+[backup-servers]
+server.domain
+

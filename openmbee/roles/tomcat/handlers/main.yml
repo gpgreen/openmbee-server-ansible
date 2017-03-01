@@ -1,0 +1,10 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+#
+# Altered from original work on standalone tomcat installation:
+# Copyright (C) 2013 AnsibleWorks, Inc.
+################################################################################
+---
+- name: restart tomcat 
+  command: systemctl restart tomcat-openmbee
+  become: yes

@@ -1,0 +1,42 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# This playbook deploys Open-MBEE stack
+
+- hosts: all
+  gather_facts: yes
+
+- name: common tasks on servers
+  hosts: db-servers tomcat-servers msg-servers
+  
+  roles:
+    - common
+
+- name: configure and deploy postgresql db servers
+  hosts: db-servers
+
+  roles:
+    - postgresql
+
+- name: configure and deploy the webservers and application code
+  hosts: tomcat-servers
+
+  roles:
+    - jre
+    - tomcat
+    - alfresco
+    - openmbee
+
+- name: configure and deploy message servers
+  hosts: msg-servers
+
+  roles:
+    - jre
+    - activemq
+
+- name: configure backups
+  hosts: backup-servers
+
+  roles:
+     - backups

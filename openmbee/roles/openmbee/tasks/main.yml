@@ -1,0 +1,192 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: copy killAlfresco.sh
+  copy: src=killAlfresco.sh dest={{ tomcat_dir }}/bin mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: copy getAlfrescoPid.sh
+  copy: src=getAlfrescoPid.sh dest={{ tomcat_dir }}/bin mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: copy stopAlfresco.sh
+  copy: src=stopAlfresco.sh dest={{ tomcat_dir }}/bin mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: create opt local directory
+  file: path=/opt/local state=directory mode=0755
+  become: yes
+
+- name: create docbookgen directory
+  file: path=/opt/local/docbookgen state=directory mode=0755 owner=root group=openmbee
+  become: yes
+
+- name: copy docbookgen from artifactory
+  get_url: url={{ docbookgen_url }} dest=/usr/src mode=0644
+  become: yes
+
+- name: extract docbookgen
+  unarchive: src=/usr/src/{{ docbookgen_file }} dest=/opt/local/docbookgen
+  become: yes
+
+- name: change ownership of docbookgen installation
+  file: path=/opt/docbookgen owner=root group=openmbee state=directory recurse=yes
+  become: yes
+
+- name: create amps directory
+  file: path=/usr/src/amps state=directory owner=openmbee group=openmbee mode=0755
+  become: yes
+
+- name: create amps_share directory
+  file: path=/usr/src/amps_share state=directory owner=openmbee group=openmbee mode=0755
+  become: yes
+
+- include: community.yml
+  when: alfresco_class == "community"
+  
+- name: remove old repo amp
+  file: path=/usr/src/amps/mms-repo-community-{{ item }}.amp state=absent
+  become: yes
+  with_items:
+    - 2.2.1.1
+    - 2.2.1
+    - 2.2
+    - 2.2.2
+    - 2.3.1
+
+- name: remove old share amp's
+  file: path=/usr/src/amps_share/mms-share-community-{{ item }}.amp state=absent
+  become: yes
+  with_items:
+    - 2.2.1.2
+    - 2.2.1.1
+    - 2.2.1
+    - 2.2
+    - 2.2.2
+  
+- name: copy mms-repo.amp from artifactory
+  get_url: url={{ mms_repo_url }} dest=/usr/src/amps mode=0644
+  become: yes
+
+- name: copy mms-share.amp from artifactory
+  get_url: url={{ mms_share_url }} dest=/usr/src/amps_share mode=0644
+  become: yes
+
+- name: apply repo amp's
+  command: "{{ java_home }}/bin/java -jar {{ tomcat_dir }}/bin/alfresco-mmt.jar install /usr/src/amps {{ tomcat_dir }}/webapps/alfresco.war -directory -force -nobackup"
+  become: yes
+  become_user: openmbee
+
+- name: list alfresco war
+  shell: "{{ java_home }}/bin/java -jar {{ tomcat_dir }}/bin/alfresco-mmt.jar list {{ tomcat_dir }}/webapps/alfresco.war > {{ tomcat_dir }}/list_alfresco_amps.txt"
+  become: yes
+  become_user: openmbee
+
+- name: apply share amp's
+  command: "{{ java_home }}/bin/java -jar {{ tomcat_dir }}/bin/alfresco-mmt.jar install /usr/src/amps_share {{ tomcat_dir }}/webapps/share.war -directory -force -nobackup"
+  become: yes
+  become_user: openmbee
+
+- name: list share war
+  shell: "{{ java_home }}/bin/java -jar {{ tomcat_dir }}/bin/alfresco-mmt.jar list {{ tomcat_dir }}/webapps/share.war > {{ tomcat_dir }}/list_share_amps.txt"
+  become: yes
+  become_user: openmbee
+
+- name: remove alfresco dir
+  file: state=absent path={{ tomcat_dir }}/webapps/alfresco
+  become: yes
+
+- name: create alfresco dir
+  file: state=directory path={{ tomcat_dir }}/webapps/alfresco mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: explode alfresco war
+  command: "{{ java_home }}/bin/jar xvf {{ tomcat_dir }}/webapps/alfresco.war chdir={{ tomcat_dir }}/webapps/alfresco"
+  become: yes
+  become_user: openmbee
+
+- name: remove share dir
+  file: state=absent path={{ tomcat_dir }}/webapps/share
+  become: yes
+
+- name: create share dir
+  file: state=directory path={{ tomcat_dir }}/webapps/share mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: explode share war
+  command: "{{ java_home }}/bin/jar xvf {{ tomcat_dir }}/webapps/share.war chdir={{ tomcat_dir }}/webapps/share"
+  become: yes
+  become_user: openmbee
+
+- name: fix alfresco log file location
+  lineinfile: 
+    dest={{ tomcat_dir }}/webapps/alfresco/WEB-INF/classes/log4j.properties 
+    regexp='log4j.appender.File.File=alfresco.log' 
+    line='log4j.appender.File.File={{ tomcat_dir }}/logs/alfresco.log'
+    backup=yes
+  become: yes
+
+- name: fix share log file location
+  lineinfile: 
+    dest={{ tomcat_dir }}/webapps/share/WEB-INF/classes/log4j.properties 
+    regexp='log4j.appender.File.File=share.log' 
+    line='log4j.appender.File.File={{ tomcat_dir }}/logs/share.log'
+    backup=yes
+  become: yes
+
+- name: copy mms properties
+  template: src=mms.properties.j2 dest={{ tomcat_dir }}/webapps/alfresco/WEB-INF/classes/mms.properties owner=openmbee group=openmbee mode=0600
+  become: yes
+
+- name: copy mmsapp from artifactory
+  get_url: url={{ evm_url }} dest=/usr/src mode=0644
+  become: yes
+
+- name: look for mmsapp
+  stat: path={{ tomcat_dir }}/webapps/alfresco/mmsapp
+  register: mmsapp
+  become: yes
+
+- name: extract mmsapp
+  command: "unzip /usr/src/{{ evm_file }} -d {{ tomcat_dir }}/webapps/alfresco"
+  become: yes
+  when: mmsapp.stat.isdir is not defined
+
+- name: rename mmsapp
+  command: "mv {{ tomcat_dir }}/webapps/alfresco/build {{ tomcat_dir }}/webapps/alfresco/mmsapp"
+  become: yes
+  when: mmsapp.stat.isdir is not defined
+
+- name: change ownership of mmsapp installation
+  file: path={{ tomcat_dir }}/webapps/alfresco/mmsapp owner=openmbee group=openmbee state=directory recurse=yes
+  become: yes
+
+- name: ensure alfresco app group read,write permissions
+  shell: find {{ tomcat_dir }}/webapps/alfresco -type f | xargs chmod g+rw
+  become: yes
+
+- name: ensure alfresco app group read,write,execute permissions
+  shell: find {{ tomcat_dir }}/webapps/alfresco -type d | xargs chmod g+rwx
+  become: yes
+  
+- name: ensure share app group read,write permissions
+  shell: find {{ tomcat_dir }}/webapps/share -type f | xargs chmod g+rw
+  become: yes
+
+- name: ensure share app group read,write,execute permissions
+  shell: find {{ tomcat_dir }}/webapps/share -type d | xargs chmod g+rwx
+  become: yes
+  
+- name: clean Tomcat files
+  command: "{{ tomcat_dir }}/bin/clean_tomcat.sh chdir=/usr/share"
+  become: yes
+  become_user: openmbee
+
+- name: start tomcat
+  command: systemctl start tomcat-openmbee
+  become: yes
+
+- name: wait for tomcat to start
+  wait_for: port={{ http_port }}
+

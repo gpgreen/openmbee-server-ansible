@@ -1,0 +1,27 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- cron: name="backup postgresql" 
+      weekday="*" minute="0" hour="23"
+      user="postgres"
+      state={{ what_state }}
+      job="{{ postgresql_data_dir }}/backup-postgresql.sh"
+      cron_file="backup_openmbee_pgsql"
+  become: yes
+
+- cron: name="backup alfresco" 
+      weekday="*" minute="30" hour="23"
+      user="openmbee"
+      state={{ what_state }}
+      job="{{ tomcat_dir }}/bin/backup-alfresco.sh"
+      cron_file="backup_openmbee_alfresco"
+  become: yes
+
+- cron: name="restart open-mbee servers" 
+      weekday="0" minute="0" hour="4" 
+      user="root"
+      state={{ what_state }}
+      job="{{ tomcat_dir }}/bin/restart_servers.sh"
+      cron_file="restart_servers"
+  become: yes

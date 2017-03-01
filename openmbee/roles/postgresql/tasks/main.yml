@@ -1,0 +1,227 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# ignore errors when stopping service as postgresql may not be installed yet
+- name: stop postgresql service
+  command: systemctl stop postgresql-openmbee
+  become: yes
+  ignore_errors: yes
+
+- name: add postgres group
+  group: name=postgres
+  become: yes
+
+- name: add postgres user
+  user: name=postgres group=postgres home={{ postgresql_data_dir }} createhome=no
+  become: yes
+
+- name: check for existence of our postgresql
+  stat: path=/{{ postgresql_install_dir }}/bin/postmaster
+  register: ourpsql
+  become: yes
+
+- name: install postgresql build dependencies
+  yum: name={{ item }} state=present
+  with_items:
+    - gcc
+    - make
+    - readline-devel
+    - zlib-devel
+    - python-devel
+  become: yes
+
+- name: get postgresql source
+  get_url: url={{ postgresql_file_url }} mode=0644 dest=/usr/src/{{ postgresql_file }}
+  become: yes
+
+- name: untar postgresql source
+  command: tar xjf /usr/src/{{ postgresql_file }} -C /usr/src
+  become: yes
+  when: ourpsql.stat.exists == False
+
+- name: configure postgresql source
+  command: ./configure --prefix={{ postgresql_install_dir }} --with-python chdir=/usr/src/postgresql-{{ postgresql_version }}
+  become: yes
+  when: ourpsql.stat.exists == False
+
+- name: compile and install postgresql source
+  command: make install chdir=/usr/src/postgresql-{{ postgresql_version }}
+  become: yes
+  when: ourpsql.stat.exists == False
+
+- name: ensure postgresql directories are readable
+  command: find {{ postgresql_install_dir }} -type d -exec chmod 0755 {} ;
+  become: yes
+
+- name: find all share files and ensure they are readable
+  command: find {{ postgresql_install_dir }}/share -type f -exec chmod 0644 {} ;
+  become: yes
+
+- name: find all include files and ensure they are readable
+  command: find {{ postgresql_install_dir }}/include -type f -exec chmod 0644 {} ;
+  become: yes
+
+# get memory sizes
+- set_fact: shared_buf_size=500MB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb < 32000
+
+- set_fact: shared_buf_size=16GB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 32000
+
+- name: set shared_buffer mem size
+  set_fact: postgresql_shared_buf_size={{ shared_buf_size }}
+
+- set_fact: eff_cache_size=1GB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb < 32000
+
+- set_fact: eff_cache_size=32GB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 32000
+
+- name: set effective cache size
+  set_fact: postgresql_eff_cache_size={{ eff_cache_size }}
+
+- set_fact: work_mem_size=1GB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb < 32000
+
+- set_fact: work_mem_size=8GB
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 32000
+
+- name: set work_mem size
+  set_fact: postgresql_work_mem_size={{ work_mem_size }}
+
+- name: check for dynamic linker file
+  stat: path=/etc/ld.so.conf.d/postgresql.conf
+  register: ourlnk
+  become: yes
+
+- name: fix dynamic linker
+  template: src=ldconf.j2 dest=/etc/ld.so.conf.d/postgresql.conf mode=0644
+  become: yes
+  when: ourlnk.stat.exists == False
+
+- name: update dynamic linker
+  command: /sbin/ldconfig {{ postgresql_install_dir }}/lib
+  become: yes
+  when: ourlnk.stat.exists == False
+
+- name: check for existence of our psycopg2
+  stat: path=/usr/lib64/python2.7/site-packages/psycopg2
+  register: ourpsyco
+
+- name: get psycopg2 source
+  get_url: url={{ psycopg2_file_url }} mode=0644 dest=/usr/src/{{ psycopg2_file }}
+  become: yes
+
+- name: untar psycopg2 source
+  command: tar xzf /usr/src/{{ psycopg2_file }} -C /usr/src
+  become: yes
+  when: ourpsyco.stat.exists == False
+  
+- name: fix setup.cfg
+  lineinfile: 
+    dest=/usr/src/psycopg2-{{ psycopg2_version }}/setup.cfg
+    state=present
+    regexp="^#pg_config="
+    line="pg_config={{ postgresql_install_dir }}/bin/pg_config"
+    backup=yes
+  become: yes
+  when: ourpsyco.stat.exists == False
+
+# don't build and install psycopg2 if it has already been installed
+- name: build and install pyscopg2
+  command: python setup.py install chdir=/usr/src/psycopg2-{{ psycopg2_version }}
+  become: yes
+  when: ourpsyco.stat.exists == False
+
+- name: ensure psyco egg is readable
+  file: path=/usr/lib64/python2.7/site-packages/psycopg2-{{ psycopg2_version }}-py2.7.egg-info mode=0644
+  become: yes
+
+- name: find all psyco directories and ensure they are readable
+  command: find /usr/lib64/python2.7/site-packages/psycopg2 -type d -exec chmod 0755 {} \;
+  become: yes
+
+- name: find all psyco files and ensure they are readable
+  command: find /usr/lib64/python2.7/site-packages/psycopg2 -type f -exec chmod 0644 {} \;
+  become: yes
+
+- name: install postgresql systemd config
+  template: src=postgresql.service.j2 dest=/etc/systemd/system/postgresql-openmbee.service mode=0644
+  become: yes
+
+- name: load service file
+  command: systemctl daemon-reload
+  become: yes
+
+- name: enable postgresql service
+  command: systemctl enable postgresql-openmbee.service
+  become: yes
+
+- name: create postgresql directory
+  file: state=directory path={{ postgresql_top_data_dir }} owner=postgres group=postgres mode=0755
+  become: yes
+
+- name: create postgresql data directory
+  file: state=directory path={{ postgresql_data_dir }} owner=postgres group=postgres mode=0700
+  become: yes
+
+- name: check for initialized data directory
+  stat: path={{ postgresql_data_dir }}/PG_VERSION
+  register: pg_data_ver
+  become: yes
+
+- name: initialize postgresql data directory
+  command: "{{ postgresql_install_dir }}/bin/initdb -D {{ postgresql_data_dir }}"
+  when: pg_data_ver.stat.exists == False
+  become: yes
+  become_user: postgres
+
+- name: install postgresql.conf configuration file
+  template: src=postgresql.conf.j2 dest={{ postgresql_data_dir }}/postgresql.conf force=yes owner=postgres group=postgres mode=0640
+  become: yes
+
+- name: install pg_hba.conf configuration file
+  template: src=pg_hba.conf.j2 dest={{ postgresql_data_dir }}/pg_hba.conf force=yes owner=postgres group=postgres mode=0640
+  become: yes
+
+- name: start postgresql service
+  command: systemctl start postgresql-openmbee
+  become: yes
+  
+- name: add alfresco db
+  postgresql_db: name={{ alfresco_postgres_db }} encoding='UTF-8' lc_collate='en_US.UTF-8' lc_ctype='en_US.UTF-8' template='template0' state=present port={{ postgresql_db_port }}
+  become: yes
+  become_user: postgres
+
+- name: add alfresco user to db
+  postgresql_user: db={{ alfresco_postgres_db }} name={{ alfresco_postgres_user }} password={{ alfresco_postgres_password }} role_attr_flags=LOGIN priv=ALL state=present port={{ postgresql_db_port }}
+  become: yes
+  become_user: postgres
+
+- name: add mms db
+  postgresql_db: name={{ mms_postgres_db }} encoding='UTF-8' lc_collate='en_US.UTF-8' lc_ctype='en_US.UTF-8' template='template0' state=present port={{ postgresql_db_port }}
+  become: yes
+  become_user: postgres
+
+- name: add mmsuser to db
+  postgresql_user: db={{ mms_postgres_db }} name={{ mms_postgres_user }} password={{ mms_postgres_password }} role_attr_flags=LOGIN priv=ALL state=present port={{ postgresql_db_port }}
+  become: yes
+  become_user: postgres
+
+- name: copy mms.sql
+  copy: src=mms-2.3.1.sql dest=/usr/src mode=0644
+  become: yes
+
+- name: has mms.sql been executed?
+  stat: path={{ postgresql_data_dir }}/mms-initialized
+  register: mms_init
+  become: yes
+  become_user: postgres
+
+# this command can destroy data, we touch a file to say we've already run it
+- name: run mms.sql
+  shell: "{{ postgresql_install_dir }}/bin/psql --port={{ postgresql_db_port }} -U {{ mms_postgres_user }} -f /usr/src/mms-2.3.1.sql postgres && touch {{ postgresql_data_dir }}/mms-initialized && chmod 0644 {{ postgresql_data_dir }}/mms-initialized"
+  become: yes
+  become_user: postgres
+  when: mms_init.stat.exists == False

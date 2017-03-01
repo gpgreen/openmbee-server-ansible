@@ -1,0 +1,12 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: copy alfresco community spp amp from artifactory
+  get_url: url={{ alf_community_amp_url }} dest=/usr/src/amps mode=0644
+  become: yes
+
+- name: remove alfresco googledocs community share amp
+  file: path=/usr/src/amps_share/alfresco-googledocs-share-2.0.5-6com.amp state=absent
+  become: yes
+

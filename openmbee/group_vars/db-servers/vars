@@ -1,0 +1,55 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# Here are variables related to the Postgresql installation
+
+postgresql_db_port: 7432
+
+# version number of postgresql
+postgresql_version: 9.5.1
+
+# version number of psycopg2
+psycopg2_version: 2.6.1
+
+# absolute path of postgresql install directory
+postgresql_install_dir: /opt/postgresql-{{ postgresql_version }}
+
+# absolute path of postgresql top data directory
+postgresql_top_data_dir: "{{ top_data_dir}}/pgsql"
+
+# absolute path of postgresql data directory
+postgresql_data_dir: "{{ postgresql_top_data_dir }}/data"
+
+# absolute path of postgresql backups
+postgresql_backup_dir: "{{ backup_dir }}/pgsql"
+
+# name of alfresco database
+alfresco_postgres_db: alfresco
+
+# alfresco postgresql rolename 
+alfresco_postgres_user: alfresco
+
+# alfresco postgresql role password
+alfresco_postgres_password: "{{ vault_alfresco_postgres_password }}"
+
+# name of mms database
+mms_postgres_db: mms
+
+# mms postgresql rolename 
+mms_postgres_user: mmsuser
+
+# mms postgresql role password
+mms_postgres_password: "{{ vault_mms_postgres_password }}"
+
+#############################################################################
+# Artifacts variables
+#############################################################################
+
+postgresql_file: postgresql-{{ postgresql_version }}.tar.bz2
+
+postgresql_file_url: "{{ artifactory }}/ext-release-local/org/postgresql/postgresql/{{ postgresql_version }}/{{ postgresql_file }}"
+
+psycopg2_file: psycopg2-{{ psycopg2_version }}.tar.gz
+
+psycopg2_file_url: "{{ artifactory }}/ext-release-local/org/initd/psycopg/psycopg2/{{ psycopg2_version }}/{{ psycopg2_file }}"

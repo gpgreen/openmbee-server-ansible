@@ -1,0 +1,7 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: copy community alfresco global properties
+  template: src=community-alfresco-global.properties.j2 dest={{ tomcat_dir }}/shared/classes/alfresco-global.properties owner=openmbee group=openmbee mode=0640
+  become: yes

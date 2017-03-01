@@ -1,0 +1,12 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: Install libselinux-python
+  yum: name=libselinux-python state=present
+  become: yes
+
+- name: create top data directory
+  file: state=directory path={{ top_data_dir }} owner=root group=root mode=0755
+  become: yes
+

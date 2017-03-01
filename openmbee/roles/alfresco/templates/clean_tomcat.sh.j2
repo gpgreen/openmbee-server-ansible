@@ -1,0 +1,11 @@
+#!/bin/sh
+# ---------------------------------
+# Script to clean Tomcat temp files
+# ---------------------------------
+# {{ ansible_managed }}
+#
+echo "Cleaning temporary Alfresco files from Tomcat..."
+rm -rf {{ tomcat_dir }}/temp/Alfresco {{ tomcat_dir }}/work/Catalina/localhost/alfresco
+rm -rf {{ tomcat_dir }}/work/Catalina/localhost/share
+rm -rf {{ tomcat_dir }}/work/Catalina/localhost/awe
+rm -rf {{ tomcat_dir }}/work/Catalina/localhost/wcmqs

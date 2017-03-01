@@ -1,0 +1,13 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+
+- name: update firewall
+  command: firewall-cmd --zone=public --permanent --add-port={{ item }}/tcp
+  with_items: "{{ tomcat_ports }}"
+  become: yes
+
+- name: restart firewalld
+  command: systemctl restart firewalld.service
+  become: yes

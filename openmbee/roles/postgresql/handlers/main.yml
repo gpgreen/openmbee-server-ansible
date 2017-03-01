@@ -1,0 +1,7 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: restart postgresql
+  command: systemctl restart postgresql-openmbee
+  become: yes

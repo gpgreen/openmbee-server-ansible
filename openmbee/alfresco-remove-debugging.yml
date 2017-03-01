@@ -1,0 +1,33 @@
+# Ansible playbook to remove remote debugging ability from Alfresco installation
+#
+#
+# Author: Greg Green <gregory.p.green@boeing.com>
+
+- hosts: tomcat-servers
+  vars:
+    jvm_debug_port: 8000
+  tasks:
+
+  - name: stop alfresco
+    command: systemctl stop tomcat-openmbee
+    become: yes
+
+  - name: remove JVM debugging from tomcat environment file
+    lineinfile:
+      dest={{ tomcat_dir }}/bin/setenv.sh
+      regexp="-agentlib:jdwp*dt_socket"
+      state=absent
+      backup=yes
+    become: yes
+
+  - name: remove debugging port from firewall rules
+    command: firewall-cmd --zone=public --permanent --remove-port={{ jvm_debug_port }}/tcp
+    become: yes
+
+  - name: start alfresco
+    command: systemctl start tomcat-openmbee
+    become: yes
+
+  - name: restart firewall
+    command: systemctl restart firewalld
+    become: yes

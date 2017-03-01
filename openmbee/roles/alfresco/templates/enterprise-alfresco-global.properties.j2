@@ -1,0 +1,87 @@
+###############################
+## Common Alfresco Properties #
+## Enterprise overlay         #
+###############################
+
+# {{ ansible_managed }}
+
+dir.root={{ alfresco_data_dir }}
+
+alfresco.context=alfresco
+alfresco.host={{ hostvars[inventory_hostname]['ansible_ssh_host'] }}
+alfresco.port={{ http_port }}
+alfresco.protocol=http
+
+share.context=share
+share.host={{ hostvars[inventory_hostname]['ansible_ssh_host'] }}
+share.port={{ http_port }}
+share.protocol=http
+
+### database connection properties ###
+db.driver=org.postgresql.Driver
+db.username={{ alfresco_postgres_user }}
+db.password={{ alfresco_postgres_password }}
+db.name={{ alfresco_postgres_db }}
+db.url=jdbc:postgresql://{{ db_addr }}:{{ postgresql_db_port }}/${db.name}
+
+# The server mode. Set value here
+# UNKNOWN | TEST | BACKUP | PRODUCTION
+system.serverMode=UNKNOWN
+
+### FTP Server Configuration ###
+ftp.enabled=true
+ftp.port=2121
+
+### RMI service ports ###
+alfresco.rmi.services.port=50500
+avm.rmi.service.port=0
+avmsync.rmi.service.port=0
+attribute.rmi.service.port=0
+authentication.rmi.service.port=0
+repo.rmi.service.port=0
+action.rmi.service.port=0
+deployment.rmi.service.port=0
+
+### External executable locations ###
+ooo.exe={{ tomcat_dir }}/libreoffice/program/soffice.bin
+ooo.enabled=false
+ooo.port=8100
+img.root={{ tomcat_dir }}/common
+img.dyn=${img.root}/lib
+img.exe=${img.root}/bin/convert
+swf.exe={{ tomcat_dir }}/common/bin/pdf2swf
+swf.languagedir={{ tomcat_dir }}/common/japanese
+
+jodconverter.enabled=true
+jodconverter.officeHome={{ tomcat_dir }}/libreoffice
+jodconverter.portNumbers=8100
+
+### Initial admin password ###
+alfresco_user_store.adminpassword={{ alfresco_user_store_pwd_encoded }}
+
+### E-mail site invitation setting ###
+notification.email.siteinvite=false
+
+### Lucene indexing ###
+index.subsystem.name=lucene
+index.recovery.mode=AUTO
+index.tracking.disableInTransactionIndexing=false
+
+### Solr indexing ###
+#index.subsystem.name=solr
+#dir.keystore=${dir.root}/keystore
+#solr.port.ssl=8443
+
+### BPM Engine ###
+system.workflow.engine.jbpm.enabled=false
+
+### Replication ###
+replication.enabled=true
+
+### Email ###
+mail.host = mail.smtp.com
+mail.port = 25
+mail.username = "{{ openmbee_group_email_name }}"
+mail.from.default = {{ openmbee_group_email }}
+mail.protocol = smtp
+mail.encoding = UTF-8

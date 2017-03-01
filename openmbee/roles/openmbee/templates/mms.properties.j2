@@ -1,0 +1,24 @@
+# CUSTOM PROPERTIES
+# {{ ansible_managed }}
+#Application Settings
+app.name=ems
+app.title=EMS
+app.url=http://{{ hostvars[inventory_hostname]['ansible_fqdn'] }}:{{ http_port }}
+app.email.from={{ openmbee_group_email }}
+app.domain.name=boeing.com
+app.email.admin={{ openmbee_group_email }}
+app.logo.url=${app.url}/picture.gif
+app.logo.alt=MBSE
+app.org.name=Model Based Systems Engineering
+app.inst.name=domain.com
+
+#Postgres Settings
+pg.host=jdbc:postgresql://{{ hostvars[groups['db-servers'][0]].iface }}:{{ postgresql_db_port }}/
+pg.name={{ mms_postgres_db }}
+pg.user={{ mms_postgres_user }}
+pg.pass={{ mms_postgres_password }}
+
+#Doors Settings
+doors.url=https://doors.domain.com/rm
+doors.user=doorsuser
+doors.pass=doorspassword

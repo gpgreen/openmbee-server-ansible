@@ -1,0 +1,21 @@
+################################################################################
+# Copyright 2017 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: create license directory
+  file: path={{ tomcat_dir }}/shared/classes/alfresco/extension/license state=directory mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: copy enterprise alfresco global properties
+  template: src=enterprise-alfresco-global.properties.j2 dest={{ tomcat_dir }}/shared/classes/alfresco-global.properties owner=openmbee group=openmbee mode=0640
+  become: yes
+
+- name: check for installed license
+  stat: path="{{ tomcat_dir }}/shared/classes/alfresco/extension/license/Alfresco-ent42-Boeing Company.lic.installed"
+  register: st
+
+- name: copy alfresco license file if not installed
+  copy: src="Alfresco-ent42-Boeing Company.lic" dest={{ tomcat_dir }}/shared/classes/alfresco/extension/license
+  become: yes
+  when: not st.stat.exists
+

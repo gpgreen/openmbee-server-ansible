@@ -1,0 +1,153 @@
+###############################
+## Common Alfresco Properties #
+###############################
+
+# {{ ansible_managed }}
+
+#
+# Sample custom content and index data location
+#
+dir.root={{ alfresco_data_dir }}
+dir.keystore=${dir.root}/keystore
+
+#
+# Sample database connection properties
+#
+db.username={{ alfresco_postgres_user }}
+db.password={{ alfresco_postgres_password }}
+
+#
+# External locations
+#-------------
+ooo.exe=/usr/bin/soffice
+ooo.enabled=true
+jodconverter.officeHome=/usr
+jodconverter.portNumbers=8101
+jodconverter.enabled=false
+img.root=/usr
+img.exe=${img.root}/bin/convert
+swf.exe=${img.root}/bin/pdf2swf
+
+#
+# Property to control whether schema updates are performed automatically.
+# Updates must be enabled during upgrades as, apart from the static upgrade scripts,
+# there are also auto-generated update scripts that will need to be executed.  After
+# upgrading to a new version, this can be disabled.
+#
+db.schema.update=true
+
+#
+# PostgreSQL connection (requires postgresql-8.2-504.jdbc3.jar or equivalent)
+#
+db.driver=org.postgresql.Driver
+db.url=jdbc:postgresql://{{ iface }}:{{ postgresql_db_port }}/alfresco
+
+#
+# Index Recovery Mode
+#-------------
+index.recovery.mode=AUTO
+
+#
+# Outbound Email Configuration
+#-------------
+mail.host=mail.smtphost.com
+mail.port=25
+mail.username="{{ openmbee_group_email_name }}"
+#mail.password=
+mail.encoding=UTF-8
+mail.from.default={{ openmbee_group_email }}
+#mail.smtp.auth=false
+
+#
+# Alfresco Email Service and Email Server
+#-------------
+
+# Enable/Disable the inbound email service.  The service could be used by processes other than
+# the Email Server (e.g. direct RMI access) so this flag is independent of the Email Service.
+#-------------
+#email.inbound.enabled=true
+
+# Email Server properties 
+#-------------
+#email.server.enabled=true
+#email.server.port=25
+#email.server.domain=alfresco.com
+#email.inbound.unknownUser=anonymous
+
+# A comma separated list of email REGEX patterns of allowed senders.
+# If there are any values in the list then all sender email addresses
+# must match. For example:
+#   .*\@alfresco\.com, .*\@alfresco\.org
+# Allow anyone:
+#-------------
+#email.server.allowed.senders=.*
+
+#
+# The default authentication chain
+# To configure external authentication subsystems see:
+# http://wiki.alfresco.com/wiki/Alfresco_Authentication_Subsystems
+#-------------
+#authentication.chain=alfrescoNtlm1:alfrescoNtlm
+
+#
+# URL Generation Parameters (The ${localname} token is replaced by the local server name)
+#-------------
+alfresco.context=alfresco
+alfresco.host={{ hostvars[inventory_hostname]['ansible_fqdn'] }}
+alfresco.port={{ http_port }}
+alfresco.protocol=http
+#
+share.context=share
+share.host={{ hostvars[inventory_hostname]['ansible_fqdn'] }}
+share.port={{ http_port }}
+share.protocol=http
+
+#imap.server.enabled=true
+#imap.server.port=143
+#imap.server.host=localhost
+
+# ftp
+ftp.port=8021
+
+############################
+# JMX
+############################
+
+# Default value of alfresco.rmi.services.host is 0.0.0.0 which means 'listen on all adapters'.
+# This allows connections to JMX both remotely and locally.
+#
+alfresco.rmi.services.host=0.0.0.0
+
+#
+# RMI service ports for the individual services.
+# These seven services are available remotely.
+#
+# Assign individual ports for each service for best performance 
+# or run several services on the same port. You can even run everything on 50500 if needed.
+#
+# Select 0 to use a random unused port.
+# 
+avm.rmi.service.port=50500
+avmsync.rmi.service.port=50500
+attribute.rmi.service.port=50500
+authentication.rmi.service.port=50500
+repo.rmi.service.port=50500
+action.rmi.service.port=50500
+wcm-deployment-receiver.rmi.service.port=50500
+monitor.rmi.service.port=50500
+
+#########################
+# Indexing
+#########################
+
+### Lucene indexing ###
+index.subsystem.name=lucene
+index.tracking.disableInTransactionIndexing=false
+# backup lucene at 3am
+index.backup.cronExpression=0 0 3 * * ?
+# backup to here
+dir.indexes.backup=${dir.root}/backup-lucene-indexes
+
+### Solr indexing ###
+#index.subsystem.name=solr
+#solr.port.ssl=8443

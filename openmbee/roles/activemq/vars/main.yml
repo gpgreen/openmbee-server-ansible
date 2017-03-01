@@ -1,0 +1,39 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+# file: roles/activemq/vars/main.yml
+# variables for use in activemq installation
+---
+
+# name of the activemq (resulting directory name when untarred)
+activemq_name: apache-activemq-{{ activemq_version }}
+
+# which directory the archive file is downloaded to
+activemq_download_folder: /usr/src
+
+# path of the downloaded archive file
+activemq_archive: "{{ activemq_download_folder }}/{{ activemq_tar_name }}"
+
+# base directory of activemq installation
+activemq_folder: /opt
+
+# activemq installation folder
+activemq_dir: "{{ activemq_folder }}/{{ activemq_name }}"
+
+# name of softlink in activemq_folder
+activemq_alias: activemq
+
+# memory usage
+activemq_system_mem_usg: "512 mb"
+activemq_system_store_usg: "1 gb"
+activemq_system_tmp_usg: "800 mb"
+activemq_jvm_heap_min: 256M
+activemq_jvm_heap_max: 1G
+
+# all ports in a set
+activemq_ports:
+  - "{{ activemq_port }}"
+  - "{{ activemq_rest_port }}"
+  - "{{ activemq_jmx_port }}"
+  - "{{ activemq_ws_port }}"
+  - "{{ activemq_web_port }}"

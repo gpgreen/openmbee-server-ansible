@@ -1,0 +1,108 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+#
+# Altered from original work on standalone tomcat installation:
+# Copyright (C) 2013 AnsibleWorks, Inc.
+################################################################################
+---
+
+# we want to just stop tomcat, and not start it again until in open-mbee role
+- name: stop tomcat if running
+  command: systemctl stop tomcat-openmbee
+  become: yes
+  ignore_errors: yes
+
+- name: add group "openmbee"
+  group: name=openmbee
+  become: yes
+
+- name: add user "openmbee"
+  user: name=openmbee group=openmbee home={{ tomcat_base_dir }} createhome=no
+  become: yes
+
+- name: download Tomcat
+  get_url: url={{ tomcat_download }} dest=/usr/src
+  become: yes
+
+- name: create tomcat base dir
+  file: state=directory path={{ tomcat_base_dir }} owner=openmbee group=openmbee mode=0755
+  become: yes
+
+- name: extract archive
+  unarchive: src=/usr/src/{{ tomcat_tar_name }} dest={{ tomcat_base_dir }} creates={{ tomcat_dir }} copy=no
+  become: yes
+
+- name: download jmx jar
+  get_url: url={{ tomcat_jmx_url }} dest={{ tomcat_dir }}/lib
+  become: yes
+
+- name: symlink install directory
+  file: src={{ tomcat_dir }} path=/usr/share/tomcat state=link
+  become: yes
+
+- name: change ownership of Tomcat installation
+  file: path={{ tomcat_dir }}/ owner=openmbee group=openmbee state=directory recurse=yes
+  become: yes
+
+- name: ensure group read,write permissions
+  shell: find {{ tomcat_dir }} -type f | xargs chmod g+rw
+  become: yes
+  
+- name: ensure group read,write,execute permissions
+  shell: find {{ tomcat_dir }} -type d | xargs chmod g+rwx
+  become: yes
+  
+# set the vm max heap memory - tomcat_max_heap_size
+- set_fact: tomcat_max_heap_size=3G
+  when: hostvars[inventory_hostname].ansible_memtotal_mb < 10000
+
+- set_fact: tomcat_max_heap_size=8G
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 10000
+  
+- set_fact: tomcat_max_heap_size=16G
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 20000
+  
+- set_fact: tomcat_max_heap_size=24G
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 48000
+  
+- set_fact: tomcat_max_heap_size=32G
+  when: hostvars[inventory_hostname].ansible_memtotal_mb >= 64000
+  
+- name: configure Tomcat server
+  template: src=server.xml.j2 dest={{ tomcat_dir }}/conf/server.xml
+  become: yes
+
+- name: configure Tomcat users
+  template: src=tomcat-users.xml.j2 dest={{ tomcat_dir }}/conf/tomcat-users.xml
+  become: yes
+
+- name: install Tomcat systemd unit file
+  template: src=tomcat.service.j2 dest=/etc/systemd/system/tomcat-openmbee.service mode=0644
+  become: yes
+
+- name: install tomcat environment script
+  template: src=tomcat-setenv.sh.j2 dest={{ tomcat_dir }}/bin/setenv.sh mode=0755 owner=openmbee group=openmbee
+  become: yes
+
+- name: copy jmx password file
+  template: src=jmx.password.j2 dest={{ tomcat_dir }}/conf/jmx.password mode=0400 owner=openmbee group=openmbee
+  become: yes
+
+- name: copy jmx access file
+  template: src=jmx.access.j2 dest={{ tomcat_dir }}/conf/jmx.access mode=0400 owner=openmbee group=openmbee
+  become: yes
+
+# enable tomcat service only, started in the open-mbee role
+- name: reload systemd unit files
+  command: systemctl daemon-reload
+  become: yes
+
+- name: enable Tomcat
+  command: systemctl enable tomcat-openmbee
+  become: yes
+
+- include: tomcat_fw_firewalld.yml
+  when: firewall == "firewalld"
+  
+- include: tomcat_fw_iptables.yml
+  when: firewall == "iptables"

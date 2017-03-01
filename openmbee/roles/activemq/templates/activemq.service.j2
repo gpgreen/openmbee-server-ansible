@@ -1,0 +1,12 @@
+[Unit]
+Description=ActiveMQ async message broker
+After=network.target
+
+[Service]
+Type=simple
+User=activemq
+Group=activemq
+ExecStart={{ activemq_dir }}/bin/activemq console
+
+[Install]
+WantedBy=multi-user.target 

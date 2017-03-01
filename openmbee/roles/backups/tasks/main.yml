@@ -1,0 +1,29 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+- name: create backup directory
+  file: state=directory path={{ backup_dir }} owner=root group=root mode=0755
+  become: yes
+
+- name: install postgresql backup script
+  template: src=backup-postgresql.sh.j2 dest={{ postgresql_data_dir }}/backup-postgresql.sh owner=postgres group=postgres mode=0750
+  become: yes
+
+- name: create postgresql backup directory
+  file: state=directory path={{ postgresql_backup_dir }} owner=postgres group=postgres mode=0750
+  become: yes
+
+- name: create alfresco backup directory
+  file: path={{ alfresco_backup_dir }} state=directory owner=openmbee group=openmbee mode=0750
+  become: yes
+
+- name: install backup script
+  template: src=backup-alfresco.sh.j2 dest={{ tomcat_dir }}/bin/backup-alfresco.sh owner=openmbee group=openmbee mode=0750
+  become: yes
+
+- name: install restart_servers.sh
+  template: src=restart_servers_systemd.sh.j2 dest={{ tomcat_dir }}/bin/restart_servers.sh owner=root group=root mode=0755
+  become: yes
+
+- include: cron_entries.yml what_state=present

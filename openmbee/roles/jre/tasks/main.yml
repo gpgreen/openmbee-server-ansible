@@ -1,0 +1,44 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+# Ansible playbook to install Java 8 on Kubuntu
+#
+# Thanks to http://www.sysadminslife.com/linux/howto-oracle-sun-java-7-installation-unter-debian-6-squeeze/
+#
+# Author: Greg Green <gregory.p.green@boeing.com>
+# modified from original by:
+# Author: Gabriel Birke <gb@birke-software.de>
+---
+
+- name: check for java tar file
+  stat: path={{ java_archive }}
+  register: java_tar
+
+- name: Download Java
+  get_url: url={{ java_download }} dest={{ download_folder }}
+  become: yes
+  when: java_tar.stat.exists == False
+
+- name: Extract Java archive
+  unarchive: src={{ java_archive }} dest={{ download_folder }} creates={{ download_folder }}/{{ java_name }} copy=no
+  become: yes
+
+- name: Fix ownership 
+  file: "state=directory path={{ download_folder }}/{{ java_name }} owner=root group=root recurse=yes"
+  become: yes
+
+- name: Create Java folder
+  file: state=directory path={{ java_folder }} owner=root group=root mode=0755
+  become: yes
+
+- name: Move Java to final folder
+  command: "mv {{ download_folder }}/{{ java_name }} {{ java_folder }} creates={{ java_folder }}/{{ java_name }}"
+  become: yes
+
+- name: Create symlink for easier update
+  file: "state=link src={{ java_folder }}/{{ java_name }} dest={{ java_folder }}/{{ java_alias }}"
+  become: yes
+
+- name: Make Java available for system
+  command: 'update-alternatives --install "/usr/bin/java" "java" "{{ java_folder }}/{{ java_alias }}/bin/java" 1'
+  become: yes

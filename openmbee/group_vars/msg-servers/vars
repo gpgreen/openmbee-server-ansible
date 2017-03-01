@@ -1,0 +1,40 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# Here are variables related to the Activemq installation
+
+# tcp message port
+activemq_port: 61616
+
+# http rest port
+activemq_rest_port: 8121
+
+# jmx port for activemq
+activemq_jmx_port: 11099
+
+# websocket port
+activemq_ws_port: 61614
+
+# webapp port
+activemq_web_port: 8161
+
+# admin user password
+activemq_admin_pw: "{{ vault_activemq_admin_pw }}"
+
+# user password
+activemq_user_pw: "{{ vault_activemq_user_pw }}"
+
+#############################################################################
+# Artifacts variables
+#############################################################################
+
+# version of activemq
+activemq_version: 5.13.3
+
+# name of the activemq tar ball
+activemq_tar_name: apache-activemq-5.13.3-bin.tar.gz
+
+# download link for activemq tar file
+activemq_download: http://java.domain.com/path/{{ activemq_tar_name }}
+

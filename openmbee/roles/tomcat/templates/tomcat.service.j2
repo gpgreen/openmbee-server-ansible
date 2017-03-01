@@ -1,0 +1,22 @@
+# Systemd unit file for tomcat
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME={{ java_home }}
+Environment=CATALINA_PID={{ tomcat_dir }}/temp/tomcat.pid
+Environment=CATALINA_HOME={{ tomcat_dir }}
+Environment=CATALINA_BASE={{ tomcat_dir }}
+#Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart={{ tomcat_dir }}/bin/startup.sh
+ExecStop=/bin/kill -15 $MAINPID
+
+User=openmbee
+Group=openmbee
+
+[Install]
+WantedBy=multi-user.target

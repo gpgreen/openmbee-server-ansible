@@ -1,0 +1,26 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# java
+java_home: /usr/lib/jvm/jdk-8-oracle
+
+# absolute path of data directory
+top_data_dir: /data/open-mbee
+
+# absolute path of backups
+backup_dir: "{{ top_data_dir }}/backups"
+
+# passwords
+jmx_monitor_role_password: "{{ vault_jmx_monitor_role_password }}"
+jmx_control_role_password: "{{ vault_jmx_control_role_password }}"
+
+# group email
+openmbee_group_email_name: "group email name"
+openmbee_group_email: group@domain.com
+
+# artifactory
+artifactory: artifactory.domain/path
+
+# number of days to keep in backups
+backup_days: 20

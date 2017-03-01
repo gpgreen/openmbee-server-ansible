@@ -1,0 +1,25 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+# variables for use in java installation
+---
+# name of the java tar ball
+java_file_name: jdk-8u112-linux-x64.tar.gz
+
+# download link for java tar file
+java_download: http://java.domain.com/path/{{ java_file_name }}
+
+# name of the package (resulting directory name when untarred)
+java_name: jdk1.8.0_112
+
+# which directory the archive file is downloaded to
+download_folder: /usr/src
+
+# path of the downloaded archive file
+java_archive: "{{ download_folder }}/{{ java_file_name }}"
+
+# where the java will be located
+java_folder: /usr/lib/jvm
+
+# name of softlink in java_folder
+java_alias: jdk-8-oracle

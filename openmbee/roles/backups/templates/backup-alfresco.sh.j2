@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# {{ ansible_managed }}
+#
+# backup-alfresco.sh
+#
+# by Greg Green for use in Open-MBEE project
+# see the steps for a hot backup at http://docs.alfresco.com/4.1/tasks/backup-hot.html
+
+TAR="/bin/tar"
+
+# directory to save backups in, must be rwx by openmbee user
+BASE_DIR="{{ alfresco_backup_dir }}"
+YMD=$(date "+%Y-%m-%d")
+
+# backup certain directories in alfresco directory
+cd {{ alfresco_data_dir }}
+$TAR cjf $BASE_DIR/$YMD.tar.bz2 contentstore backup-lucene-indexes contentstore.deleted keystore 2>&1
+chmod 0640 $BASE_DIR/$YMD.tar.bz2
+
+# delete backup files older than {{ backup_days }} days
+OLD=$(find $BASE_DIR -type f -mtime +{{ backup_days }})
+if [ -n "$OLD" ] ; then
+        echo deleting old backup files: $OLD
+        echo $OLD | xargs rm -rfv
+fi
+

@@ -1,0 +1,92 @@
+################################################################################
+# Copyright 2016 "Greg Green" <gregory.p.green@boeing.com> All rights reserved
+################################################################################
+---
+# We don't need to start or stop tomcat here, it is stopped in tomcat role and will
+# be started in the openmbee role
+- name: copy alfresco sdk
+  get_url: url={{ alfresco_sdk_url }} dest=/usr/src
+  become: yes
+
+- set_fact: alf_sdk_path=/usr/src/{{ alfresco_zip_root }}
+
+- name: look for alfresco sdk
+  stat: path={{ alf_sdk_path }}
+  register: alfsdk
+  become: yes
+  
+- name: extract alfresco sdk
+  command: unzip /usr/src/{{ alfresco_zip }} -d /usr/src
+  become: yes
+  when: alfsdk.stat.isdir is not defined
+  
+- name: copy alfresco war
+  copy: src={{ alf_sdk_path }}/web-server/webapps/alfresco.war dest={{ tomcat_dir }}/webapps/alfresco.war owner=openmbee group=openmbee mode=0644
+  become: yes
+
+- name: copy alfresco share war
+  copy: src={{ alf_sdk_path }}/web-server/webapps/share.war dest={{ tomcat_dir }}/webapps/share.war owner=openmbee group=openmbee mode=0644
+  become: yes
+
+- name: edit catalina.properties to add shared directory
+  lineinfile: 
+    dest={{ tomcat_dir }}/conf/catalina.properties 
+    state=present
+    regexp='^shared.loader=$' 
+    line='shared.loader=${catalina.home}/shared/classes,${catalina.home}/shared/lib/*.jar'
+  become: yes
+  become_user: openmbee
+
+- name: copy shared directory from zip
+  copy: src={{ alf_sdk_path }}/web-server/shared dest={{ tomcat_dir }} owner=openmbee group=openmbee mode=0644
+  become: yes
+
+- name: create shared/lib directory
+  file: path={{ tomcat_dir }}/shared/lib owner=openmbee group=openmbee state=directory mode=0755
+  become: yes
+
+- include: enterprise.yml
+  when: alfresco_class == "enterprise"
+
+- include: community.yml
+  when: alfresco_class == "community"
+  
+- name: copy web server libs
+  copy: src={{ alf_sdk_path }}/web-server/lib/ dest={{ tomcat_dir }}/lib owner=openmbee group=openmbee
+  become: yes
+
+- name: copy alfresco binaries & scripts
+  copy: src={{ alf_sdk_path }}/bin/ dest={{ tomcat_dir }}/bin mode=0755 owner=openmbee group=openmbee 
+  become: yes
+
+- name: create alfresco data store
+  file: path={{ alfresco_data_dir }} owner=openmbee group=openmbee state=directory
+  become: yes
+
+- name: copy alfresco key store
+  copy: src=keystore dest={{ alfresco_data_dir }} owner=openmbee group=openmbee
+  become: yes
+
+- name: create link to alf_data, not sure we need this, but there seem to be references to alf_data in alfresco xml files
+  file: src={{ alfresco_data_dir }} dest={{ tomcat_dir }}/alf_data state=link
+  become: yes
+
+# check for files in data directory owned by openmbee
+- name: check for correct owner in alfresco data directory
+  stat: path={{ alfresco_data_dir }}/lucene-indexes
+  register: lucene_indexes
+  become: yes
+
+- name: get openmbee owner id
+  command: id -u openmbee
+  register: uid
+
+# fix ownership of files if needed
+- name: fix ownership of alfresco data
+  command: chown -R openmbee.openmbee {{ alfresco_data_dir }}
+  become: yes
+  when: lucene_indexes.stat is defined and lucene_indexes.stat.uid != uid.stdout_lines[0]
+
+- name: copy clean_tomcat.sh
+  template: src=clean_tomcat.sh.j2 dest={{ tomcat_dir }}/bin/clean_tomcat.sh owner=openmbee group=openmbee mode=0755
+  become: yes

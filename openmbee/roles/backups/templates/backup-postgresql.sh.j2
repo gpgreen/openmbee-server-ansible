@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# {{ ansible_managed }}
+#
+# backup-postgresql.sh
+# by Craig Sanders 
+# this script is public domain.  feel free to use or modify as you like.
+#
+# Modified by Greg Green for use in Open-MBEE project
+# see the steps for a hot backup at http://docs.alfresco.com/4.1/tasks/backup-hot.html
+POSTGRESQL_DIR="{{ postgresql_install_dir }}"
+PGDUMP="$POSTGRESQL_DIR/bin/pg_dump -p {{postgresql_db_port}} -w"
+PSQL="$POSTGRESQL_DIR/bin/psql -p {{postgresql_db_port}} -w"
+TAR="/bin/tar"
+
+# directory to save backups in, must be rwx by postgres user
+BASE_DIR="{{ postgresql_backup_dir }}"
+YMD=$(date "+%Y-%m-%d")
+DIR="$BASE_DIR/$YMD"
+mkdir -p $DIR
+cd $DIR
+
+# get list of databases in system, exclude the tempate dbs
+# some output has 2 lines, so we also have to ignore those lines, they have
+# <user>=CTc which we use to exclude
+DBS=$($PSQL -l -t | egrep -v 'template[01]|postgres=CTc|alfresco=CTc|mmsuser=CTc' | awk '{print $1}')
+
+# loop through each individual database and backup the db separately
+for database in $DBS; do
+    DATA=$database.gz
+    # dump full db
+    $PGDUMP $database | gzip -9 > $DATA
+done
+
+# delete backup files older than {{ backup_days }} days
+OLD=$(find $BASE_DIR -type d -mtime +{{ backup_days }})
+if [ -n "$OLD" ] ; then
+        echo deleting old backup files: $OLD
+        echo $OLD | xargs rm -rfv
+fi
+
